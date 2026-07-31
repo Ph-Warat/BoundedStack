@@ -1,4 +1,4 @@
-# รายงานชิ้นงาน BoundedStack
+# BoundedStack
 
 ## รายวิชา
 Software Construction
@@ -9,279 +9,271 @@ Software Construction
 
 - ชื่อ: วรัตม์ ขันทะเขตร์ รหัสนิสิต: 6821651736
 
----
 
-# 1. วัตถุประสงค์
+## Concept
 
-พัฒนา Abstract Data Type (ADT) ชนิด BoundedStack ซึ่งเป็น Stack ที่มีจำนวนสมาชิกสูงสุดตามค่าที่กำหนด พร้อมทั้งสร้างชุดทดสอบ (Test Runner) เพื่อทดสอบการทำงานของทุก operation และตรวจสอบ Representation Exposure
+`BoundedStack` คือ ADT ที่เก็บข้อมูลชนิด `String` ในรูปแบบ Stack (LIFO: Last In First Out) โดยสามารถกำหนดจำนวนสมาชิกสูงสุด (`capacity`) ได้ตั้งแต่ตอนสร้างวัตถุ หาก Stack เต็มจะไม่สามารถเพิ่มข้อมูลได้ และหาก Stack ว่างจะไม่สามารถนำข้อมูลออกได้
 
----
-
-# 2. การออกแบบ ADT
-
-## Data Representation
+ตัวอย่างการใช้งาน
 
 ```java
-private final List<String> elements;
-private final int capacity;
+BoundedStack stack = new BoundedStack(3);
+
+stack.push("Ronaldo");
+stack.push("Messi");
+
+stack.peek();     // Messi
+stack.pop();      // Messi
+stack.size();     // 1
 ```
 
-- elements ใช้เก็บข้อมูลใน Stack
-- capacity เป็นจำนวนสมาชิกสูงสุดของ Stack
-
 ---
 
-## Abstraction Function (AF)
+# AF (Abstraction Function)
 
-แทน Stack ของข้อมูลชนิด String ที่มีขนาดไม่เกิน capacity โดยสมาชิกตัวสุดท้ายของ List ถือเป็น Top ของ Stack
-
----
-
-## Representation Invariant (RI)
-
-- elements ต้องไม่เป็น null
-- capacity > 0
-- จำนวนสมาชิกต้องไม่เกิน capacity
-
-ตรวจสอบทุกครั้งด้วย
-
-```java
-checkRep();
+```
+AF(elements, capacity)
+=
+Stack ของข้อความตามลำดับใน elements
+โดยสมาชิกตัวสุดท้ายของ List เป็น Top ของ Stack
 ```
 
+ตัวอย่าง
 
+```
+elements = ["Ronaldo","Messi","Neymar"]
+
+Top
+ ↓
+Neymar
+```
+
+หมายความว่า `pop()` จะคืน `"Neymar"` ก่อน
 
 ---
 
-# 3. Operations
+# RI (Representation Invariant)
 
-## Constructors
+ข้อมูลภายในต้องเป็นจริงตลอดเวลา
 
-### BoundedStack(int capacity)
+- `elements` ต้องไม่เป็น `null`
+- `capacity > 0`
+- `elements.size() <= capacity`
+
+มีการตรวจสอบผ่าน `checkRep()` หลังจากสร้าง Object และหลังจากมีการเปลี่ยนแปลงข้อมูลใน Stack
+
+---
+
+# Rep Exposure
+
+มีการป้องกัน Representation Exposure ดังนี้
+
+- field ทั้งหมดเป็น `private final`
+- Constructor ที่รับ `List<String>` จะสร้าง `ArrayList` ใหม่ ไม่เก็บ reference เดิม
+- เมธอด `elements()` คืนค่าเป็น `new ArrayList<>(elements)` ทุกครั้ง
+
+ดังนั้นหากผู้ใช้แก้ไข List ที่ส่งเข้า Constructor หรือ List ที่ได้จาก `elements()` จะไม่ส่งผลต่อข้อมูลภายใน Stack
+
+---
+
+# Method
+
+## Creator
+
+### `BoundedStack(int capacity)`
 
 สร้าง Stack ว่าง
 
-Precondition
+**Requires**
 
-- capacity > 0
+- `capacity > 0`
 
-Postcondition
+**Effects**
 
-- ได้ Stack ว่างที่สามารถเก็บข้อมูลได้ตาม capacity
+สร้าง Stack ว่างที่มีความจุเท่ากับ `capacity`
+
+**Throws**
+
+- `IllegalArgumentException`
 
 ---
 
-### BoundedStack(int capacity, List<String> items)
+### `BoundedStack(int capacity, List<String> items)`
 
 สร้าง Stack จากข้อมูลเริ่มต้น
 
-Precondition
+**Requires**
 
-- capacity > 0
-- items != null
-- items.size() ≤ capacity
+- `capacity > 0`
+- `items != null`
+- `items.size() <= capacity`
 
-Postcondition
+**Effects**
 
-- Stack มีข้อมูลเหมือน items
+สร้าง Stack ใหม่และคัดลอกข้อมูลจาก `items`
 
----
+**Throws**
 
-## push(String s)
-
-หน้าที่
-
-เพิ่มข้อมูลบนสุดของ Stack
-
-Precondition
-
-- s ไม่เป็น null
-- Stack ยังไม่เต็ม
-
-Postcondition
-
-- สมาชิกเพิ่มขึ้น 1 ตัว
-- s เป็น Top ของ Stack
-
-Exception
-
-- IllegalArgumentException
-- IllegalStateException
+- `IllegalArgumentException`
 
 ---
 
-## pop()
+## Mutator
 
-หน้าที่
+### `push(String s)`
+
+เพิ่มข้อมูลไว้บนสุดของ Stack
+
+**Requires**
+
+- `s != null`
+- Stack ต้องไม่เต็ม
+
+**Effects**
+
+เพิ่มข้อมูลลงใน Stack
+
+**Throws**
+
+- `IllegalArgumentException`
+- `IllegalStateException`
+
+---
+
+### `pop()`
 
 นำข้อมูลบนสุดออกจาก Stack
 
-Precondition
+**Requires**
 
 - Stack ต้องไม่ว่าง
 
-Postcondition
+**Effects**
 
-- สมาชิกลดลง 1 ตัว
+ลบสมาชิกตัวบนสุดออก
 
-Return
+**Returns**
 
-- ข้อมูลที่ถูกนำออก
+ข้อมูลที่ถูกนำออก
 
-Exception
+**Throws**
 
-- IllegalStateException
+- `IllegalStateException`
 
 ---
 
-## peek()
+## Observer
+
+### `size()`
+
+คืนจำนวนสมาชิกใน Stack
+
+---
+
+### `isEmpty()`
+
+คืนค่า `true` เมื่อ Stack ว่าง
+
+---
+
+### `isFull()`
+
+คืนค่า `true` เมื่อ Stack เต็ม
+
+---
+
+### `contains(String s)`
+
+ตรวจสอบว่ามีข้อมูลนี้อยู่ใน Stack หรือไม่
+
+---
+
+### `peek()`
 
 คืนข้อมูลบนสุดโดยไม่ลบออก
 
-Precondition
+**Requires**
 
 - Stack ต้องไม่ว่าง
 
----
+**Throws**
 
-## size()
-
-คืนจำนวนสมาชิกปัจจุบัน
+- `IllegalStateException`
 
 ---
 
-## isEmpty()
+### `elements()`
 
-คืนค่า true เมื่อ Stack ว่าง
+คืนสำเนาของข้อมูลทั้งหมดใน Stack
 
----
-
-## isFull()
-
-คืนค่า true เมื่อจำนวนสมาชิกเท่ากับ capacity
+ผู้ใช้สามารถแก้ไข List ที่คืนกลับได้ โดยไม่กระทบข้อมูลภายใน
 
 ---
 
-## contains(String s)
+## Producer
 
-ตรวจสอบว่ามีข้อมูลอยู่ใน Stack หรือไม่
+### `shuffled()`
 
----
+สร้าง `BoundedStack` ตัวใหม่ที่มีข้อมูลชุดเดิมแต่เรียงลำดับแบบสุ่ม
 
-## elements()
-
-คืนสำเนาของ List ภายใน
-
-ใช้ Defensive Copy เพื่อป้องกัน Representation Exposure
+- Stack เดิมไม่เปลี่ยนแปลง
+- ใช้ `Collections.shuffle()`
 
 ---
 
-## shuffled()
+# ตาราง Exception
 
-สร้าง BoundedStack ตัวใหม่ที่มีสมาชิกเดิมแต่เรียงลำดับแบบสุ่ม
-
-Stack เดิมจะไม่เปลี่ยนแปลง
-
----
-
-# 4. Representation Exposure
-
-มีการป้องกันทั้งขาเข้าและขาออก
-
-## Constructor
-
-ใช้
-
-```java
-new ArrayList<>(items)
-```
-
-เพื่อคัดลอกข้อมูลก่อนเก็บไว้ใน Stack
+| Method | เงื่อนไข | Exception |
+|---------|----------|-----------|
+| `BoundedStack(int)` | `capacity <= 0` | `IllegalArgumentException` |
+| `BoundedStack(int,List)` | `capacity <= 0` | `IllegalArgumentException` |
+| | `items == null` | `IllegalArgumentException` |
+| | `items.size() > capacity` | `IllegalArgumentException` |
+| `push()` | `s == null` | `IllegalArgumentException` |
+| | Stack เต็ม | `IllegalStateException` |
+| `pop()` | Stack ว่าง | `IllegalStateException` |
+| `peek()` | Stack ว่าง | `IllegalStateException` |
 
 ---
 
-## elements()
+# Test Cases
 
-คืนค่า
-
-```java
-new ArrayList<>(elements)
-```
-
-
-
----
-
-# 5. การทดสอบ
-
-Test Runner ถูกแบ่งออกเป็น
-
-- testCreators()
-- testPush()
-- testPop()
-- testObservers()
-- testProducer()
-- testRepresentationExposure()
-
-โดยมี helper
-
-```java
-check(...)
-```
-
-
----
-
-## รายการที่ทดสอบ
-
-### Constructor
-
-- สร้าง Stack ปกติ
-- capacity = 0
-- capacity ติดลบ
-- items เป็น null
-- items มากกว่า capacity
-
-### push()
-
-- push ปกติ
-- push จนเต็ม
-- push null
-- push ตอนเต็ม
-
-### pop()
-
-- pop ปกติ
-- pop จนว่าง
-- pop Stack ว่าง
-
-### Observer
-
-- size()
-- isEmpty()
-- isFull()
-- contains()
-- elements()
-- peek()
-
-### Producer
-
-- shuffled() คืน Object ใหม่
-- สมาชิกครบถ้วน
-- Stack เดิมไม่เปลี่ยน
-- shuffle Stack ว่าง
-
-### Representation Exposure
-
-ตรวจสอบทั้ง
+ชุดทดสอบประกอบด้วย
 
 - Constructor
-- elements()
+- push()
+- pop()
+- Observer Methods
+- shuffled()
+- Representation Exposure
 
-ว่าไม่สามารถแก้ไขข้อมูลภายใน Stack ได้
+โดย Test Runner สามารถแสดงผล
+
+- PASS
+- FAIL
+- Summary
+
+พร้อมนับจำนวน Test ที่ผ่านและไม่ผ่านอัตโนมัติ
 
 ---
 
-# 6. สรุป
+# การคอมไพล์และรัน
 
-ชิ้นงานสามารถทำงานได้ครบตามข้อกำหนดของ ADT BoundedStack โดยมีการกำหนด Abstraction Function และ Representation Invariant อย่างชัดเจน ใช้ Defensive Copy เพื่อป้องกัน Representation Exposure และมีชุดทดสอบที่ครอบคลุมทั้งกรณีปกติและกรณีเกิด Exception พร้อมแสดงผลการทดสอบและสรุปผลอัตโนมัติ
+```bash
+javac BoundedStack.java BoundedStackTest.java
+
+java -ea BoundedStackTest
+```
+
+เปิด `-ea` เพื่อให้ `assert` และ `checkRep()` ทำงาน
+
+---
+
+# โครงสร้างไฟล์
+
+```
+.
+├── BoundedStack.java
+├── BoundedStackTest.java
+└── README.md
+```
