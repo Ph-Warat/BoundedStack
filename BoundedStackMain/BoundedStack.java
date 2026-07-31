@@ -1,7 +1,7 @@
 import java.util.*;
 
 /**
- * BoundedStack คือคลาสที่ใช้สำหรับสร้าง stack ที่มีขนาดจำกัด
+ * BoundedStack เป็นคลาสที่แทน stack ที่มีขนาดจำกัด
  * elements คือ list ของ string ที่เก็บข้อมูลใน stack
  * capacity คือขนาดสูงสุดของ stack
  * 
@@ -21,7 +21,6 @@ public class BoundedStack {
     private final int capacity;
 
     /**
-     * 
      * checkRep() เป็นเมธอดที่ใช้ตรวจสอบ representation invariant ของคลาส
      * BoundedStack
      */
@@ -41,14 +40,14 @@ public class BoundedStack {
         if (capacity <= 0) {
             throw new IllegalArgumentException("Capacity must be positive");
         }
-
-        if (items.size() > capacity) {
-            throw new IllegalArgumentException("Too many items");
+        if (items == null) {
+            throw new IllegalArgumentException("Items cannot be null");
         }
-
+        if (items.size() > capacity) {
+             throw new IllegalArgumentException("Too many items");
+        }
         this.capacity = capacity;
         this.elements = new ArrayList<>(items);
-
         checkRep();
     }
 
@@ -71,10 +70,9 @@ public class BoundedStack {
             throw new IllegalArgumentException("Element cannot be null");
         }
 
-        //if (isFull()) {
-            //throw new IllegalStateException("Stack is full");
-        //}
-
+        if (isFull()) {
+            throw new IllegalStateException("Stack is full");
+        }
         elements.add(s);
         checkRep();
     }
@@ -88,7 +86,9 @@ public class BoundedStack {
         if (elements.isEmpty()) {
             throw new IllegalStateException("Stack is empty");
         }
-        return elements.remove(elements.size() - 1);
+        String value = elements.remove(elements.size() - 1);
+        checkRep();
+        return value;
     }
 
     /**
